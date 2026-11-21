@@ -131,6 +131,23 @@ It may be useful to define a function for the alternate index, to avoid the expl
 ```
 
 
+=== Cross-references
+
+An entry can refer to other entries instead of to a page, with the `see` and `see-also`
+parameters#index[Cross-references]#index(see-also: "Nested entries")[Cross-references]. Such a mark adds no page
+reference. Each parameter takes one target or an array of targets.
+
+```typ
+    #index(see: "Cross-references")[References]
+    #index(see-also: "Nested entries")[Cross-references]
+```
+#index(see: "Cross-references")[References]
+
+In the index, these show as "References, _see_ Cross-references" and "Cross-references", followed by its pages and
+"_see also_ Nested entries". The labels can be set with the parameters `see-label` and
+`see-also-label` of `make-index()`; the defaults are `emph[see]` and `emph[see also]`.
+
+
 === Nested entries
 
 Entries can be nested. The `index` function takes multiple arguments - one for each

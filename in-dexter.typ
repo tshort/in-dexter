@@ -18,6 +18,9 @@
 // @param display: If given, this will be the displayed content in the index page (instead of the key entry).
 // @param apply-casing: If set to auto (default) the parameter from make-index is used.
 //    Otherwise it overwrites the setting. Set to false for entries starting with a formula!
+// @param see: Entry or entries (string or content, or an array of them) to refer to
+//    instead of a page, like "see Faults". The mark adds no page reference.
+// @param see-also: Like see, for "see also" references.
 // @param ..entry, variable argument to nest index entries (left to right). Only the last, rightmost
 // entry is the key for the entry. The others are used for grouping.
 #let index(
@@ -27,6 +30,8 @@
   index: "Default",
   display: auto,
   apply-casing: auto,
+  see: (),
+  see-also: (),
   ..entry,
 ) = (
   context {
@@ -43,6 +48,8 @@
         entry: entry,
         display: display,
         apply-casing: apply-casing,
+        see: if type(see) == array { see } else { (see,) },
+        see-also: if type(see-also) == array { see-also } else { (see-also,) },
       ))<jkrb_index>]
   }
 )
@@ -144,6 +151,18 @@
         apply-casing: apply-casing,
       ),
     )
+    // A cross-reference mark adds its targets instead of a page.
+    if page-link.see.len() > 0 or page-link.see-also.len() > 0 {
+      for kind in ("see", "see-also") {
+        let targets = current-entry.at(kind, default: ())
+        for t in page-link.at(kind) {
+          if t not in targets { targets.push(t) }
+        }
+        current-entry.insert(kind, targets)
+      }
+      reg-entry.insert(key, current-entry)
+      return reg-entry
+    }
     let pages = current-entry.at("pages", default: ())
     let pageRanges = pages.map(p => {
       if p.index-type == indextype.Start and page-link.index-type == indextype.End {
@@ -184,6 +203,8 @@
       entry,
       display,
       apply-casing,
+      see,
+      see-also,
     ) = indexed.value
 
     if (indexes != auto) and (not indexes.contains(index-name)) {
@@ -257,6 +278,8 @@
             page-counter: page-counter,
             page-counter-end: page-counter-end,
             page-numbering: page-numbering,
+            see: see,
+            see-also: see-also,
           ),
           reg-entry,
           use-bang-grouping,
@@ -375,7 +398,7 @@
 }
 
 // Internal function to format a plain or nested entry
-#let render-entry(idx, entry, lvl, use-page-counter, sort-order, entry-casing, range-delimiter, spc, mpc, merge-ranges) = {
+#let render-entry(idx, entry, lvl, use-page-counter, sort-order, entry-casing, range-delimiter, spc, mpc, merge-ranges, see-label, see-also-label) = {
   // Pages are collected in source order, which is not always page order:
   // a mark in a floating figure can land on a later page than the marks
   // after it.
@@ -392,8 +415,18 @@ let rendered-pages = {
       entry-casing,
       entry.at("apply-casing", default: auto),
     )
-    box(width: 1fr)
-    p.join(", ")
+    // Cross-references follow the pages ("12; see also Faults"), or the
+    // entry itself when it has no pages ("Faults, see Short circuits").
+    let refs = ()
+    let see = entry.at("see", default: ())
+    let see-also = entry.at("see-also", default: ())
+    if see.len() > 0 { refs.push(see-label + [ ] + see.join("; ")) }
+    if see-also.len() > 0 { refs.push(see-also-label + [ ] + see-also.join("; ")) }
+    let parts = if p.len() > 0 { (p.join(", "),) } else { () } + refs
+    if parts.len() > 0 {
+      if p.len() > 0 { box(width: 1fr) } else [, ]
+      parts.join("; ")
+    }
     parbreak()
   }
 
@@ -401,7 +434,7 @@ let rendered-pages = {
 
   let rendered-entries = if sub-entries.keys().len() > 0 [
     #for key in sub-entries.keys().sorted(key: sort-order) [
-      #render-entry(key, sub-entries.at(key), lvl + 1, use-page-counter, sort-order, entry-casing, range-delimiter, spc, mpc, merge-ranges)
+      #render-entry(key, sub-entries.at(key), lvl + 1, use-page-counter, sort-order, entry-casing, range-delimiter, spc, mpc, merge-ranges, see-label, see-also-label)
     ]
   ]
   [
@@ -426,6 +459,8 @@ let rendered-pages = {
 // @param mpc (default: "ff.") Symbol(s) to mark a Multi-Page-Continuation.
 // @param merge-ranges (default: false) merge consecutive pages into a range,
 //        like "71, 72, 73" into "71--73".
+// @param see-label (default: emph[see]) text before "see" cross-references.
+// @param see-also-label (default: emph[see also]) text before "see also" cross-references.
 // @param indexes (default: auto) optional name(s) of the index(es) to use. Auto uses all indexes.
 // @param surround (default: body) a function to surround the index body with additional content/settings.
 // @param section-container (default: section) a function to wrap the whole section in a container.
@@ -442,6 +477,8 @@ let rendered-pages = {
   mpc: "ff.",
   range-delimiter: [--],
   merge-ranges: false,
+  see-label: emph[see],
+  see-also-label: emph[see also],
   indexes: auto,
   surround: (body) => {
       set par(first-line-indent: 0pt, spacing: 0.65em, hanging-indent: 1em)
@@ -480,7 +517,7 @@ let rendered-pages = {
             let entry = register.at(letter)
             // sort and render entries
             for idx in entry.keys().sorted(key: sort-order) {
-              render-entry(idx, entry.at(idx), 0, use-page-counter, sort-order, entry-casing, range-delimiter, spc, effective-mpc, merge-ranges)
+              render-entry(idx, entry.at(idx), 0, use-page-counter, sort-order, entry-casing, range-delimiter, spc, effective-mpc, merge-ranges, see-label, see-also-label)
             }
           })
         })
