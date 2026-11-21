@@ -503,6 +503,27 @@ numbering. Two merged pages are shown with the `spc` symbol, unless `spc` is `no
 ```
 
 
+=== Run-in entries
+
+By default, the pages of an entry are aligned on the right. With `run-in: true`, the
+`make-index()` function puts them right after the entry instead, like "Faults, 12, 15",
+as many printed books do#index[Run-in Entries]. The parameter `level-indent` (default
+`1em`) sets the indentation per level of nested entries. Wrapped lines are indented by the
+`hanging-indent` set in `surround`, which should be deeper than the nested entries. See
+@runInIndex for a sample.
+
+```typ
+    #make-index(
+      run-in: true,
+      level-indent: 1.5em,
+      surround: body => {
+        set par(first-line-indent: 0pt, hanging-indent: 3em, justify: false)
+        body
+      },
+    )
+```
+
+
 === Skipping physical pages
 
 If page number 1 is not the first physical page#index-main[physical page] of the document,
@@ -712,6 +733,28 @@ Index] indexes and format them all lower case.
     entry-casing: lower,
     use-bang-grouping: true,
     sort-order: upper,
+  )
+]
+
+#line(length: 100%)
+#pagebreak()
+
+
+== Run-in Index<runInIndex>
+
+This is the default index with `run-in: true`.
+
+#columns(3)[
+  #make-index(
+    use-bang-grouping: true,
+    use-page-counter: true,
+    sort-order: upper,
+    run-in: true,
+    level-indent: 1.5em,
+    surround: body => {
+      set par(first-line-indent: 0pt, spacing: 0.65em, hanging-indent: 3em, justify: false)
+      body
+    },
   )
 ]
 

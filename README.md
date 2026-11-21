@@ -144,6 +144,22 @@ merged when they have the same format (e.g. main entries) and numbering:
 
 With the default `spc` of "f.", two merged pages show as "71f.".
 
+By default, the pages of an entry are aligned on the right. With `run-in: true`, they follow
+the entry instead ("Faults, 12, 15"), as in many printed books. `level-indent` sets the
+indentation per level of nested entries (default `1em`). The indentation of wrapped lines
+comes from `surround`; for run-in entries it should be deeper than the nested entries:
+
+```typ
+#make-index(
+  run-in: true,
+  level-indent: 1.5em,
+  surround: body => {
+    set par(first-line-indent: 0pt, hanging-indent: 3em, justify: false)
+    body
+  },
+)
+```
+
 If no title is given the heading should never appear in the layout.
 Note: The heading is (currently) not numbered.
 
@@ -262,6 +278,8 @@ A more complex sample PDF is available there as well.
 
 ### Unreleased
 
+* Add `run-in` parameter to `make-index`, to put the pages right after the entry, and
+  `level-indent` for the indentation of nested entries.
 * Add cross-references: `see` and `see-also` parameters of `index`, and `see-label` and
   `see-also-label` parameters of `make-index`.
 * Add `merge-ranges` parameter to `make-index`, to merge consecutive pages into a range
