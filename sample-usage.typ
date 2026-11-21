@@ -473,6 +473,19 @@ floating figure#index[Floating Figures] or table lands on a later page than the 
 follow it in the source.
 
 
+=== Merging consecutive pages
+
+An entry marked on several consecutive pages lists each of them, like "71, 72, 73". With
+`merge-ranges: true`, `make-index()` merges consecutive pages#index[Consecutive Pages], and
+overlapping or adjacent ranges, into one range, like "71--73". Pages are only merged when
+they have the same format (main entries are merged only with main entries) and the same
+numbering. Two merged pages are shown with the `spc` symbol, unless `spc` is `none`.
+
+```typ
+    #make-index(merge-ranges: true, spc: none)
+```
+
+
 === Skipping physical pages
 
 If page number 1 is not the first physical page#index-main[physical page] of the document,

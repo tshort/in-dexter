@@ -344,12 +344,43 @@
   display
 }
 
+// Internal function to merge consecutive pages, and overlapping or adjacent
+// ranges, into one range: 71, 72, 73 -> 71--73. Expects pages sorted by page.
+// Only pages with the same format and numbering are merged.
+#let merge-consecutive(pages) = {
+  let merged = ()
+  for p in pages {
+    let q = merged.at(-1, default: none)
+    let mergeable = (
+      q != none
+        and q.index-type in (indextype.Cardinal, "Range")
+        and p.index-type in (indextype.Cardinal, "Range")
+        and q.fmt == p.fmt
+        and q.page-numbering == p.page-numbering
+        and p.page <= q.rangeEnd + 1
+        and p.page-counter <= q.page-counter-end + 1
+    )
+    if mergeable {
+      if p.rangeEnd > q.rangeEnd {
+        q.rangeEnd = p.rangeEnd
+        q.page-counter-end = p.page-counter-end
+      }
+      if q.rangeEnd > q.page { q.index-type = "Range" }
+      merged.at(-1) = q
+    } else {
+      merged.push(p)
+    }
+  }
+  merged
+}
+
 // Internal function to format a plain or nested entry
-#let render-entry(idx, entry, lvl, use-page-counter, sort-order, entry-casing, range-delimiter, spc, mpc) = {
+#let render-entry(idx, entry, lvl, use-page-counter, sort-order, entry-casing, range-delimiter, spc, mpc, merge-ranges) = {
   // Pages are collected in source order, which is not always page order:
   // a mark in a floating figure can land on a later page than the marks
   // after it.
   let pages = entry.at("pages", default: ()).sorted(key: p => p.page)
+  if merge-ranges { pages = merge-consecutive(pages) }
   let display = entry.at("display", default: idx)
   let render-function = render-link.with(use-page-counter, range-delimiter, spc, mpc)
 
@@ -370,7 +401,7 @@ let rendered-pages = {
 
   let rendered-entries = if sub-entries.keys().len() > 0 [
     #for key in sub-entries.keys().sorted(key: sort-order) [
-      #render-entry(key, sub-entries.at(key), lvl + 1, use-page-counter, sort-order, entry-casing, range-delimiter, spc, mpc)
+      #render-entry(key, sub-entries.at(key), lvl + 1, use-page-counter, sort-order, entry-casing, range-delimiter, spc, mpc, merge-ranges)
     ]
   ]
   [
@@ -393,6 +424,8 @@ let rendered-pages = {
 // @param spc (default: "f.") Symbol(s) to mark a Single-Page-Continuation.
 //        If set to none, a numeric range is used instead, like "42-43".
 // @param mpc (default: "ff.") Symbol(s) to mark a Multi-Page-Continuation.
+// @param merge-ranges (default: false) merge consecutive pages into a range,
+//        like "71, 72, 73" into "71--73".
 // @param indexes (default: auto) optional name(s) of the index(es) to use. Auto uses all indexes.
 // @param surround (default: body) a function to surround the index body with additional content/settings.
 // @param section-container (default: section) a function to wrap the whole section in a container.
@@ -408,6 +441,7 @@ let rendered-pages = {
   spc: "f.",
   mpc: "ff.",
   range-delimiter: [--],
+  merge-ranges: false,
   indexes: auto,
   surround: (body) => {
       set par(first-line-indent: 0pt, spacing: 0.65em, hanging-indent: 1em)
@@ -446,7 +480,7 @@ let rendered-pages = {
             let entry = register.at(letter)
             // sort and render entries
             for idx in entry.keys().sorted(key: sort-order) {
-              render-entry(idx, entry.at(idx), 0, use-page-counter, sort-order, entry-casing, range-delimiter, spc, effective-mpc)
+              render-entry(idx, entry.at(idx), 0, use-page-counter, sort-order, entry-casing, range-delimiter, spc, effective-mpc, merge-ranges)
             }
           })
         })

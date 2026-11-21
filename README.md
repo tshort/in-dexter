@@ -119,6 +119,16 @@ The `make-index()` function takes three optional arguments: `title`, `outlined`,
     number text in the index instead of the absolute page position (the absolute position is still
     used for the actual link target)
 
+To merge consecutive pages into a range, like "71, 72, 73" into "71–73", set
+`merge-ranges: true`. Overlapping or adjacent ranges are merged as well; pages are only
+merged when they have the same format (e.g. main entries) and numbering:
+
+```typ
+#make-index(merge-ranges: true, spc: none)
+```
+
+With the default `spc` of "f.", two merged pages show as "71f.".
+
 If no title is given the heading should never appear in the layout.
 Note: The heading is (currently) not numbered.
 
@@ -237,6 +247,8 @@ A more complex sample PDF is available there as well.
 
 ### Unreleased
 
+* Add `merge-ranges` parameter to `make-index`, to merge consecutive pages into a range
+  ("71, 72, 73" becomes "71–73").
 * Fix: page references are listed in page order, also when marks in floating figures or tables
   land on a later page than the marks that follow them in the source.
 
